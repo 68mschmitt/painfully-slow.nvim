@@ -842,8 +842,6 @@ def main():
                '  %(prog)s --pipe < input.raw # filter a byte stream\n',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument('command', nargs='*',
-                   help='Command to run (with arguments)')
     p.add_argument('--test', action='store_true',
                    help='Display test pattern through the filter')
     p.add_argument('--pipe', action='store_true',
@@ -860,8 +858,14 @@ def main():
                    help='Terminal width (default: 80)')
     p.add_argument('--rows', type=int, default=24,
                    help='Terminal height (default: 24)')
+    p.add_argument('command', nargs=argparse.REMAINDER,
+                   help='Command to run (use -- before commands with flags)')
 
     args = p.parse_args()
+
+    # Strip leading '--' from command if present
+    if args.command and args.command[0] == '--':
+        args.command = args.command[1:]
 
     # Validate mode
     if not args.test and not args.pipe and not args.command:
