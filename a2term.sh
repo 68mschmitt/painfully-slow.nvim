@@ -47,20 +47,27 @@ shift $((OPTIND - 1))
 
 # --- Find A2Pico serial device ---
 find_device() {
-    local devices=(/dev/ttyACM*)
-    if [[ ! -c "${devices[0]:-}" ]]; then
+    local devices=()
+    # Linux: /dev/ttyACM*
+    # macOS: /dev/cu.usbmodem* (preferred -- doesn't block on carrier detect)
+    for pattern in /dev/ttyACM* /dev/cu.usbmodem*; do
+        for d in $pattern; do
+            [[ -c "$d" ]] && devices+=("$d")
+        done
+    done
+    if (( ${#devices[@]} == 0 )); then
         return 1
     fi
     if (( ${#devices[@]} == 1 )); then
         echo "${devices[0]}"
     else
+        local last="${devices[${#devices[@]}-1]}"
         echo "Multiple serial devices found:" >&2
         for d in "${devices[@]}"; do
             echo "  $d" >&2
         done
-        # Use the last one -- ttyACM0 is often something else
-        echo "Using ${devices[-1]}" >&2
-        echo "${devices[-1]}"
+        echo "Using $last" >&2
+        echo "$last"
     fi
 }
 
@@ -85,7 +92,7 @@ fi
 DEVICE="${1:-}"
 if [[ -z "$DEVICE" ]]; then
     DEVICE=$(find_device) || {
-        echo "error: no /dev/ttyACM* found -- is the A2Pico connected?" >&2
+        echo "error: no serial device found (tried /dev/ttyACM* and /dev/cu.usbmodem*) -- is the A2Pico connected?" >&2
         exit 1
     }
 fi
@@ -95,9 +102,9 @@ if [[ ! -c "$DEVICE" ]]; then
     exit 1
 fi
 
-if fuser "$DEVICE" >/dev/null 2>&1; then
+if lsof "$DEVICE" >/dev/null 2>&1; then
     echo "error: $DEVICE already in use:" >&2
-    fuser -v "$DEVICE" 2>&1
+    lsof "$DEVICE"
     exit 1
 fi
 
