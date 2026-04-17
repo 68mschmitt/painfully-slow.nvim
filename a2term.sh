@@ -9,6 +9,7 @@
 #   ./a2term.sh              # filtered mode (default, handles full-screen apps)
 #   ./a2term.sh -r           # raw/unfiltered pipe mode (simple shell only)
 #   ./a2term.sh -r -p        # raw/unfiltered PTY mode
+#   ./a2term.sh -c           # clean/isolated mode (no .bashrc or .config)
 #   ./a2term.sh /dev/ttyACM1 # specify device
 #
 # The default (filtered) mode runs all output through a2filter.py, which
@@ -27,19 +28,22 @@ TERM_TYPE=vt100
 RAW_MODE=0
 USE_PTY=0
 FILTER_ARGS=()
+CLEAN_MODE=0
 
 # --- Parse flags ---
-while getopts "rpas" opt; do
+while getopts "rpasc" opt; do
     case $opt in
         r) RAW_MODE=1 ;;
         p) USE_PTY=1 ;;
         a) FILTER_ARGS+=(--ascii-only) ;;
         s) FILTER_ARGS+=(--stats) ;;
-        *) echo "Usage: $0 [-r] [-p] [-a] [-s] [device]" >&2
+        c) CLEAN_MODE=1 ;;
+        *) echo "Usage: $0 [-r] [-p] [-a] [-s] [-c] [device]" >&2
            echo "  -r  Raw mode (no filter, original behavior)" >&2
            echo "  -p  PTY mode without filter (use with -r)" >&2
            echo "  -a  ASCII-only box drawing (no VT100 graphics)" >&2
            echo "  -s  Print filter statistics on disconnect" >&2
+           echo "  -c  Clean/isolated shell (no .bashrc or .config)" >&2
            exit 1 ;;
     esac
 done
@@ -108,6 +112,31 @@ if lsof "$DEVICE" >/dev/null 2>&1; then
     exit 1
 fi
 
+# --- Clean/isolated mode setup ---
+if (( CLEAN_MODE )); then
+    CLEAN_HOME=$(mktemp -d)
+    trap 'rm -rf "$CLEAN_HOME"' EXIT
+    cat > "$CLEAN_HOME/.bashrc" << 'RCEOF'
+# Minimal isolated environment for Apple IIe terminal
+PS1='\w\$ '
+export TERM="${TERM:-vt100}"
+export LANG="${LANG:-en_US.UTF-8}"
+RCEOF
+    export HOME="$CLEAN_HOME"
+    export SHELL=/bin/bash
+    export XDG_CONFIG_HOME="$CLEAN_HOME/.config"
+    export XDG_DATA_HOME="$CLEAN_HOME/.local/share"
+fi
+
+# --- Helper: run socat (skip exec in clean mode so EXIT trap can clean up) ---
+run_socat() {
+    if (( CLEAN_MODE )); then
+        socat "$@"
+    else
+        exec socat "$@"
+    fi
+}
+
 if (( RAW_MODE )); then
     if (( USE_PTY )); then
         echo "A2Pico terminal: $DEVICE (raw PTY mode, no filter)"
@@ -120,6 +149,9 @@ else
         echo "  filter options: ${FILTER_ARGS[*]}"
     fi
 fi
+if (( CLEAN_MODE )); then
+    echo "  clean mode: HOME=$CLEAN_HOME"
+fi
 echo "Ctrl-C here to disconnect."
 echo ""
 
@@ -128,14 +160,14 @@ if (( RAW_MODE )); then
     # --- Raw mode: original behavior, no filter ---
     if (( USE_PTY )); then
         # PTY mode: shell gets a real terminal.
-        exec socat \
+        run_socat \
             "FILE:$DEVICE,raw,echo=0,clocal=1,hupcl=0" \
             "EXEC:env TERM=$TERM_TYPE /bin/bash -i,pty,sane,setsid,ctty,stderr"
     else
         # Pipe mode: simpler, proven reliable.
         # opost+onlcr translates LF -> CRLF on output.
         # icrnl translates Apple's CR -> LF on input.
-        exec socat \
+        run_socat \
             "FILE:$DEVICE,raw,echo=0,clocal=1,hupcl=0,opost=1,onlcr=1,icrnl=1" \
             "EXEC:env TERM=$TERM_TYPE PS1='\\w\\$ ' /bin/bash -i,stderr"
     fi
@@ -157,7 +189,7 @@ else
     if [[ ${#FILTER_ARGS[@]} -gt 0 ]]; then
         FILTER_CMD="$FILTER ${FILTER_ARGS[*]}"
     fi
-    exec socat \
+    run_socat \
         "FILE:$DEVICE,raw,echo=0,clocal=1,hupcl=0" \
         "EXEC:$FILTER_CMD -- /bin/bash -i,pty,setsid,ctty,stderr"
 fi
