@@ -9,7 +9,7 @@
 #   ./a2term.sh              # filtered mode (default, handles full-screen apps)
 #   ./a2term.sh -r           # raw/unfiltered pipe mode (simple shell only)
 #   ./a2term.sh -r -p        # raw/unfiltered PTY mode
-#   ./a2term.sh -c           # clean/isolated mode (no .bashrc or .config)
+#   ./a2term.sh -H           # use real HOME (skip project-local home/)
 #   ./a2term.sh /dev/ttyACM1 # specify device
 #
 # The default (filtered) mode runs all output through a2filter.py, which
@@ -28,22 +28,22 @@ TERM_TYPE=vt100
 RAW_MODE=0
 USE_PTY=0
 FILTER_ARGS=()
-CLEAN_MODE=0
+USE_REAL_HOME=0
 
 # --- Parse flags ---
-while getopts "rpasc" opt; do
+while getopts "rpasH" opt; do
     case $opt in
         r) RAW_MODE=1 ;;
         p) USE_PTY=1 ;;
         a) FILTER_ARGS+=(--ascii-only) ;;
         s) FILTER_ARGS+=(--stats) ;;
-        c) CLEAN_MODE=1 ;;
-        *) echo "Usage: $0 [-r] [-p] [-a] [-s] [-c] [device]" >&2
+        H) USE_REAL_HOME=1 ;;
+        *) echo "Usage: $0 [-r] [-p] [-a] [-s] [-H] [device]" >&2
            echo "  -r  Raw mode (no filter, original behavior)" >&2
            echo "  -p  PTY mode without filter (use with -r)" >&2
            echo "  -a  ASCII-only box drawing (no VT100 graphics)" >&2
            echo "  -s  Print filter statistics on disconnect" >&2
-           echo "  -c  Clean/isolated shell (no .bashrc or .config)" >&2
+           echo "  -H  Use real HOME (skip project-local home/ isolation)" >&2
            exit 1 ;;
     esac
 done
@@ -112,29 +112,30 @@ if lsof "$DEVICE" >/dev/null 2>&1; then
     exit 1
 fi
 
-# --- Clean/isolated mode setup ---
-if (( CLEAN_MODE )); then
-    CLEAN_HOME=$(mktemp -d)
-    trap 'rm -rf "$CLEAN_HOME"' EXIT
-    cat > "$CLEAN_HOME/.bashrc" << 'RCEOF'
-# Minimal isolated environment for Apple IIe terminal
-PS1='\w\$ '
-export TERM="${TERM:-vt100}"
-export LANG="${LANG:-en_US.UTF-8}"
-RCEOF
-    export HOME="$CLEAN_HOME"
-    export SHELL=/bin/bash
-    export XDG_CONFIG_HOME="$CLEAN_HOME/.config"
-    export XDG_DATA_HOME="$CLEAN_HOME/.local/share"
+# --- Shell environment (always force bash) ---
+# Ensure programs like tmux that read SHELL will use bash, not the
+# user's login shell.
+export SHELL=/bin/bash
+
+# --- Isolated home directory ---
+# By default, use the project-local home/ directory so the remote shell
+# is independent of the user's normal config (~/.vimrc, ~/.tmux.conf, etc.).
+# Use -H to bypass this and use the real HOME.
+if (( ! USE_REAL_HOME )); then
+    A2_HOME="$SCRIPT_DIR/home"
+    if [[ ! -d "$A2_HOME" ]]; then
+        echo "error: $A2_HOME directory not found" >&2
+        echo "  create it or use -H to use your real HOME" >&2
+        exit 1
+    fi
+    export HOME="$A2_HOME"
+    export XDG_CONFIG_HOME="$A2_HOME/.config"
+    export XDG_DATA_HOME="$A2_HOME/.local/share"
 fi
 
-# --- Helper: run socat (skip exec in clean mode so EXIT trap can clean up) ---
+# --- Helper: run socat ---
 run_socat() {
-    if (( CLEAN_MODE )); then
-        socat "$@"
-    else
-        exec socat "$@"
-    fi
+    exec socat "$@"
 }
 
 if (( RAW_MODE )); then
@@ -149,8 +150,8 @@ else
         echo "  filter options: ${FILTER_ARGS[*]}"
     fi
 fi
-if (( CLEAN_MODE )); then
-    echo "  clean mode: HOME=$CLEAN_HOME"
+if (( ! USE_REAL_HOME )); then
+    echo "  HOME=$HOME"
 fi
 echo "Ctrl-C here to disconnect."
 echo ""
