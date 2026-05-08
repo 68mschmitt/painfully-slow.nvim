@@ -45,3 +45,19 @@ tmux
 exit
 echo Hello
 tmux
+exit
+tmux
+exit
+exit
+exit
+exit
+tmux ls
+tmux
+ls
+tmux ls
+exit
+ls
+exit
+ls
+ls
+tmux

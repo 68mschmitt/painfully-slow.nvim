@@ -343,6 +343,20 @@ class VT100Filter:
             self.state = self.ESC
             self.buf = bytearray([b])
             return b''
+        if b == 0x0e:
+            # SO (Shift Out) -- program wants DEC Special Graphics via G1.
+            # Convert to ESC(0 (designate G0) so the filter tracks state
+            # and ensures we always exit cleanly.  Raw SO/SI are fragile
+            # over serial -- a dropped SI leaves the terminal stuck.
+            self.program_gfx = True
+            self.in_gfx = True
+            return b'\x1b(0'
+        if b == 0x0f:
+            # SI (Shift In) -- program exiting graphics mode.
+            # Convert to ESC(B to stay in sync with filter state.
+            self.program_gfx = False
+            self.in_gfx = False
+            return b'\x1b(B'
         if b < 0x20 or b == 0x7f:
             # Control chars: pass through (CR, LF, TAB, BS, BEL, etc.)
             return bytes([b])

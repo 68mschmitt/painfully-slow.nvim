@@ -10,13 +10,23 @@
 
 # hlsearch on (H) or off (h):
 ~h
+# Last Search Pattern:
+~MSle0~/src
+
+# Last Substitute String:
+$
+
 # Command Line History (newest to oldest):
+:qa!
+|2,0,1778256147,,"qa!"
 :qa
 |2,0,1778254771,,"qa"
 :e a2term.sh
 |2,0,1778254758,,"e a2term.sh"
 
 # Search String History (newest to oldest):
+?/src
+|2,1,1778256102,47,"src"
 
 # Expression History (newest to oldest):
 
@@ -25,18 +35,48 @@
 # Debug Line History (newest to oldest):
 
 # Registers:
+""-	CHAR	0
+	@nestjs/cache-manager
+|3,1,36,0,1,0,1778256138,"@nestjs/cache-manager"
 
 # File marks:
-'0  11  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
-|4,48,11,0,1778254771,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
+'0  12  41  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion/repository/completion.repository.ts
+|4,48,12,41,1778256147,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion/repository/completion.repository.ts"
+'1  11  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
+|4,49,11,0,1778254771,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
 
 # Jumplist (newest first):
+-'  12  41  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion/repository/completion.repository.ts
+|4,39,12,41,1778256147,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion/repository/completion.repository.ts"
+-'  13  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion
+|4,39,13,0,1778256123,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion"
+-'  14  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules
+|4,39,14,0,1778256120,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules"
+-'  14  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src
+|4,39,14,0,1778256115,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src"
+-'  21  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api
+|4,39,21,0,1778256105,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api"
+-'  48  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api
+|4,39,48,0,1778256102,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api"
+-'  8  0  /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api
+|4,39,8,0,1778256095,"/Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api"
+-'  11  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
+|4,39,11,0,1778254771,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
 -'  11  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
 |4,39,11,0,1778254771,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
 -'  1  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
 |4,39,1,0,1778254758,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
+-'  1  0  /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
+|4,39,1,0,1778254758,"/Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh"
 
 # History of marks within files (newest to oldest):
+
+> /Users/michael.schmitt/sc/compliance/onyx/onyx-intake-api/src/modules/Completion/repository/completion.repository.ts
+	*	1778256145	0
+	"	12	41
+	^	12	42
+	.	12	41
+	+	12	41
 
 > /Users/michael.schmitt/projects/apple-2e-term-client/a2term.sh
 	*	1778254769	0
